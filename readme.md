@@ -1,1 +1,1 @@
-![spectralFlow]("https://github.com/daniel-corcoran/spectralFlow/blob/master/app/static/webasset/img/spectralflow-logo.jpg?raw=true")
+![](spectralFlow.jpg)
