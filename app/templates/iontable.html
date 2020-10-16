@@ -1,0 +1,19 @@
+<style>
+    .ion-table-tr:nth-child(even) {
+  background-color: #dddddd;
+}
+
+</style>
+<table style="width: 100%; table-layout: fixed; word-wrap:break-word;">
+    <tr><th>info</th><th>mass spectrum</th></th><th>tools</th></tr>
+
+    {% for spectrum in data %}
+        <tr class="ion-table-tr" >
+            <td style="width:25%"><i>{{ spectrum[1].title }}</i><br>
+                <b>[M+H]<sup>+</sup></b> {{ spectrum[1].pepmass }}<br>
+            {{ spectrum[1].scan }}</td>
+            <td><span id="{{ mode }}_spectrum_img_{{ spectrum[0] }}">loading...</span></td>
+            <td style="text-align: left; margin-left: 10px;">See details (FIXME)</td>
+        </tr>
+    {% endfor %}
+</table>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>~ spectralflow ~</title>
+    <link rel="icon" type="image/png" href="static/webasset/img/sf.png">
+    <script src="static/webasset/js/jquery.min.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-180685157-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-180685157-1');
+    </script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Ariel, Helvetica, SansSerif, sans-serif;
+        }
+        .box {
+            display:flex;
+
+            flex-flow: column;
+            height: 100%;
+        }
+
+        .box .row.header {
+            flex: 0 1 auto;
+        }
+        .box .row.content {
+            flex: 1 1 auto;
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            align-content: center;
+        }
+        #logo {
+            max-width: 500px;
+        }
+
+
+    </style>
+
+
+</head>
+<body>
+<div class="box">
+<div class="row header">
+    <a href="/"><img id='logo' src="static/webasset/img/spectralflow-logo.jpg"></a>
+</div>
+
+<div class="row content">
+{% block content %}{%  endblock %}
+</div>
+
+</div>
+
+
+</body>
+</html>

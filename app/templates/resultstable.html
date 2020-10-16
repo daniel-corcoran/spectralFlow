@@ -1,0 +1,22 @@
+<style>
+    .results-table-tr:nth-child(even) {
+  background-color: #dddddd;
+}
+
+</style>
+<table style="width: 100%; table-layout: fixed; word-wrap:break-word;">
+    <tr><th>reference</th><th>sample</th></th><th>cosine</th></tr>
+
+    {% for answer in results %}
+
+
+
+        <tr class="results-table-tr" >
+            <td>{{ answer.reference }}</td>
+            <td>{{ answer.sample }}</td>
+            <td>{{ answer.cosine }}</td>
+        </tr>
+
+
+    {% endfor %}
+</table>

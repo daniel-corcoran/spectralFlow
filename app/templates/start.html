@@ -1,0 +1,92 @@
+{%  extends 'base.html' %}
+
+{%  block content %}
+<style>
+#request-form {
+    text-align: center;
+    align-content: center;
+}
+
+</style>
+
+<div id="request-form">
+<h3>Make sure you are using Google Chrome. This website has bugs in Firefox.</h3>
+    <!-- user can upload search spectrum, such as replicates or consensus in an MGF file. -->
+<form id="upload-form" method="post" enctype="multipart/form-data"><br>
+
+        <label for="reference">reference spectra</label>
+        <input name="reference" type="file" accept=".MGF, .mgf">
+        <br><br>
+        <label for="sample">sample spectra</label>
+        <input name="sample" type="file" accept=".MGF, .mgf">
+    <br><br>
+        <button id="upload-files-btn" type="button">Begin</button>
+</form>
+    <br><br>
+    <a href="/static/webasset/download/REFERENCE_rna_modification_consensus_dataset.mgf" download>download example reference MFG</a>
+    <br>
+    <a href="/static/webasset/download/SAMPLE_rna_replicates.mgf" download>download example sample MGF</a>
+
+<!-- AJAX file upload handler. -->
+
+<script>
+    $(function() {
+    $('#upload-files-btn').click(function() {
+
+        var form_data = new FormData($('#upload-form')[0]);
+        $.ajax({
+            type: 'POST',
+            url: '/API/upload',
+            data: form_data,
+            contentType: false,
+            cache: false,
+            processData: false,
+            dataType: "json",
+            success: function(data) {
+                // Determine if it was a success or failure.
+                console.log("Data", data)
+                if (data.success === true) {
+
+                    console.log("Success, redirecting to session");
+                    window.location = '/interface?session_id=' + data.session_token;
+
+                } else {
+                    console.log("ERROR: File upload was unsuccessful.");
+                    /*
+                    Error types:
+
+                    err_1: No reference file uploaded
+                    err_2: No sample file uploaded
+
+                    err_3: reference file bad extension or filename
+                    err_4: sample file bad extension or filename
+
+                    err_5: reference file exceeds file size limit (25mb?)
+                    err_6: sample file exceeds file size limit (25mb?)
+
+                    err_7: reference file could not be interpreted
+                    err_8: sample file could not be interpreted
+
+                     */
+
+                    if(data.err_1 === true){console.log("Error 1");}
+                    if(data.err_2 === true){console.log("Error 2");}
+                    if(data.err_3 === true){console.log("Error 3");}
+                    if(data.err_4 === true){console.log("Error 4");}
+                    if(data.err_5 === true){console.log("Error 5");}
+                    if(data.err_6 === true){console.log("Error 6");}
+                    if(data.err_7 === true){console.log("Error 7");}
+                    if(data.err_8 === true){console.log("Error 8");}
+
+
+                }
+
+            },
+        });
+    });
+});
+</script>
+
+
+</div>
+{% endblock %}
