@@ -1,0 +1,73 @@
+<style>
+    #wrap {
+    width: 600px;
+    margin: 0 auto;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    display: inline;
+    padding: 5px;
+}
+
+.stgraph {
+    top: 0;
+    left: 0;
+    width: 600px;
+    height: 500px;
+    float: left;
+}
+
+.stgraphm {
+    width: 900px;
+    height: 600px;
+    float: left;
+}
+
+</style>
+
+<div id="wrap">
+    <div id="stgraph" class="stgraph"></div>
+</div>
+
+<script>
+    var chart;
+    function ms (x) {
+
+        $("#stgraph").empty();                 // clear DOM child elements
+        $("#adddata").removeAttr("disabled")   // enable 'Add Data' button
+            .attr("onclick","load(" + x + ")");// point to data loader
+
+        chart = st.chart                    // create a new MS chart
+            .ms()                           // chart type
+            .legend(true)                   // options
+            .xlabel("m/z")
+            .ylabel("Abundance")
+
+            .margins([80, 80, 80, 120]);
+        chart.render("#stgraph");           // render chart to id 'stgraph'
+        var set = st.data.set()
+                        .x("peaks.mz")
+                        .y("peaks.intensity")
+                        .title("spectrumId");
+
+        chart.load(set);
+
+        set.add([
+            {{ reference_json | safe }},
+            {{ sample_json  | safe }}
+        ]);
+    };
+
+
+
+    ms(0);
+
+
+
+</script>

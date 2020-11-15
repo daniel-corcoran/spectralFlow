@@ -10,8 +10,7 @@ import base64
 import time
 import random
 import os
-from search.spectralFlow.flow import web_api_hook
-
+from search.spectralFlow.flow import web_api_hook, check_progress
 avail = True
 
 
@@ -26,6 +25,10 @@ def render_table(response_json, mode):
         return render_template('iontable.html', data=[[a, b] for a, b in enumerate(response_json)], mode=mode)
 
 
+def render_specktackle():
+    ...
+
+
 @app.route('/API/search', methods=['POST', 'GET'])
 def request_spectral_match():
     # TODO: Can we show results as they load in?
@@ -33,6 +36,12 @@ def request_spectral_match():
     cos = request.form.get('cos', default=0, type=float)
     ab = request.form.get('ab', default=0.07, type=float)
     tkn = request.form.get('tkn', default=-1, type=str)
+    include_reference = request.form.getlist("include_reference")
+    include_sample = request.form.getlist("include_sample")
+
+
+
+    print(f"exclude reference: {include_reference}\nexclude sample: {include_sample}")
     print(mz)
     print(cos)
     print(ab)
@@ -42,13 +51,17 @@ def request_spectral_match():
                  cos_threshold = cos,
                  mass_check = mz,
                  mass_delta = 0.004, # FIXME
-                 abundance_cut=ab)
+                 abundance_cut=ab,
+                 include_reference=include_reference,
+                 include_sample=include_sample)
     # Start a thread for spectral matching.
-    results_table = render_template('resultstable.html', results=response_list)
+
+    results_table = render_template('resultstable.html', results=response_list, session_id = tkn)
     # Construct a new HTML table with the results.
 
 
-    return {'success': True, 'html': results_table}
+    return json.dumps({'success': True, 'html': results_table})
+
 
 @app.route("/API/mass_spectrum", methods=['POST'])
 def render_mass_spectrum():
@@ -113,3 +126,86 @@ def sample_ion_json():
     response_json = {'ions': response_json, 'html': render_table(gen, 'sample')}
 
     return json.dumps(response_json)
+
+
+@app.route('/comparison_popup_handler')
+def comparision_popup_handler():
+
+    ses_tkn = request.args.get('session_id', type=str, default='')
+    reference_id = request.args.get('reference_id', type=int, default=0)
+
+    sample_id = request.args.get('sample_id', type=int, default=0)
+    abundance_cut = request.args.get('ab_cut', type=float, default=-1)
+
+    reference_gen = yield_vector_from_file(f'files/{ses_tkn}reference.mgf', ab_cut=abundance_cut)
+    sample_gen = yield_vector_from_file(f'files/{ses_tkn}sample.mgf', ab_cut=abundance_cut)
+
+    cos_result = request.args.get('cos_result', type=float, default=-1)
+    # TODO: Need to calculate cosine between samples OTF
+
+
+
+    reference = [x for x in reference_gen if x['id'] == reference_id]
+    sample = [x for x in sample_gen if x['id'] == sample_id]
+
+    if len(reference) != 1:
+        return "There was an error, either no reference ion was found" \
+               " or more than one with the same ID exists. Code: {x}".format(x=len(reference))
+
+    if len(sample) != 1:
+        return "There was an error, either no sample ion was found" \
+               " or more than one with the same ID exists. Code: {x}".format(x=len(sample))
+
+    reference = reference[0]
+    sample = sample[0]
+    p = []
+    for a, b in zip(reference['mass'], reference['abundance']):
+        p.append({"mz": a, "intensity": b})
+    reference_json = {"spectrumId": "reference", "peaks": p}
+
+    p = []
+    for a, b in zip(sample['mass'], sample['abundance']):
+        p.append({"mz": a, "intensity": -1 * b})
+    sample_json = {"spectrumId": "sample", "peaks": p}
+
+
+    # generate a head-tail plot at a specktackle object?
+    # Need to know information (can store in one data structure / dictionary?
+
+    '''
+    Sample ion: 
+    - Title
+    - RT In minutes
+    - M+H + 
+    - Scan #
+    
+    Reference ion: 
+    - Title
+    - M+H + 
+    
+    Analysis: 
+    - Cosine similarity
+    - List similar peaks?     
+    '''
+
+
+
+    print("Received request to render a new popup handler")
+    return render_template('popup/popup_headtail.html',
+                           reference_json = json.dumps(reference_json),
+                           sample_json = json.dumps(sample_json),
+                           reference = reference,
+                           sample = sample,
+                           cosine = cos_result)
+    # arguments for session ID,
+
+@app.route('/API/scan_progress', methods=['POST', 'GET'])
+def scan_progress():
+    ses_tkn = request.form['data']
+    print("Session token: ", ses_tkn)
+    if check_progress(ses_tkn):
+
+        return json.dumps({"update_pct": int(100 * check_progress(ses_tkn))})
+    else:
+
+        return json.dumps({"update_pct": int(0)})

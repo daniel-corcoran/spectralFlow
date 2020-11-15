@@ -10,10 +10,7 @@ import re
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-# TODO: Accept search inputs as file path inputs.
-# So users can submit custom files and spectra to perform searches on.
-
-
+progress_dic = {} # Dictionary that tracks the percentage completion of certain jobs
 
 def align_tokens(ta, tb, token_key):
     # Align two tokens to 0.002
@@ -107,18 +104,20 @@ def pretty_single_sample(single_sample, ab_cut):
 
 def yield_vector_from_file(path, ab_cut=0):
     with open(path) as source:
-        single_sample = {'mass': [], 'abundance': [], 'lines': []}  # One RT
+        idd = 0
+        single_sample = {'mass': [], 'abundance': [], 'lines': [], 'checked': True, 'id': idd}  # One RT
         all_sample = []
         for line in source:
             single_sample['lines'].append(line)
             if 'END IONS' in line:  # Parse the current sample and clear cache
                 single_sample = pretty_single_sample(single_sample, ab_cut)
                 all_sample.append(single_sample)
-                single_sample = {'mass': [], 'abundance': [], 'lines': []}
+                idd += 1
+                single_sample = {'mass': [], 'abundance': [], 'lines': [], 'checked': True, 'id': idd}
             elif line[0] == 'T':
                 single_sample['title'] = line.split()[0].replace('TITLE=', '')
 
-                single_sample['scan'] = line.split()[-1][:-1]
+                single_sample['scan'] = line.split()[-1][:-1].replace('scan=', '')
             elif line[0] in ['B', 'T', 'C', '\n']:  # This information is not used, so skip
                 pass
             elif line[0] == 'R':
@@ -342,13 +341,30 @@ def mass_difference(file_path='',
         f.write(out_b_str)
 
 
-def web_api_hook(ses_tkn, cos_threshold, mass_check, mass_delta, abundance_cut):
+def check_progress(ses_tkn):
+    if ses_tkn in progress_dic:
+        return progress_dic[ses_tkn]
+    else:
+        return 0
+
+
+def web_api_hook(ses_tkn,
+                 cos_threshold,
+                 mass_check,
+                 mass_delta,
+                 abundance_cut,
+                 include_reference,
+                 include_sample):
+
+    global progress_dic
 
     reference_gen = yield_vector_from_file(f'files/{ses_tkn}reference.mgf', ab_cut=abundance_cut)
     sample_gen = yield_vector_from_file(f'files/{ses_tkn}sample.mgf', ab_cut=abundance_cut)
-    reference = [x for x in reference_gen]
-    sample = [x for x in sample_gen]
-
+    reference = [x for x in reference_gen if str(x['id']) in include_reference]
+    sample = [x for x in sample_gen if str(x['id']) in include_sample]
+    reference_id_title = {}
+    for r in reference:
+        reference_id_title[r['id']] = r['title']
     key = []
 
     for x in reference:
@@ -360,9 +376,10 @@ def web_api_hook(ses_tkn, cos_threshold, mass_check, mass_delta, abundance_cut):
     token_dic = {'key': key}
     count_dic = {}
     mass_dic = {}
+
     for x in reference:
-        mass_dic[x['title']] = x['pepmass']
-        token_dic[x['title']] = tokenize(x, key)
+        mass_dic[x['id']] = x['pepmass']
+        token_dic[x['id']] = tokenize(x, key)
 
     print('\nRT\tTop match\tCosine similarity')
     min_val = 1
@@ -372,15 +389,28 @@ def web_api_hook(ses_tkn, cos_threshold, mass_check, mass_delta, abundance_cut):
     unmatch_write_string = ''
 
     results = []
-
-    for x in sample:
+    z = len(sample)
+    for counter, x in enumerate(sample):
+        progress_dic[ses_tkn] = counter / z
         stats = spectral_match_tkn(tokenize(x, key), token_dic, mass_dic, x['pepmass'], mass_delta, mass_check)
 
         if len(stats):
+            #print(int(100 * check_progress(ses_tkn)), "%")
             best_match = max(stats.items(), key=operator.itemgetter(1))[0]
             best_score = stats[best_match]
+            #print(stats)
+
             if best_score >= cos_threshold:
-                results.append({'sample': x['title'], 'reference': best_match, 'cosine': best_score})
+
+                results.append({'sample': x['scan'],
+                                'reference': reference_id_title[best_match],
+                                'cosine': round(best_score, 3),
+                                'ab_cut': abundance_cut,
+                                'sample_id': x['id'],
+                                'reference_id': best_match,
+                                'sample_rt_s': x['rt'],
+                                'sample_rt_m': round(x['rt']/ 60, 2)})
+
                 if best_score < min_val:
                     min_val = best_score
                     min_mod = best_match
@@ -388,8 +418,8 @@ def web_api_hook(ses_tkn, cos_threshold, mass_check, mass_delta, abundance_cut):
                     count_dic[best_match] = 0
                 count_dic[best_match] += 1
 
-    print("\n\nNumber of modifications detected: {}".format(len(count_dic)))
+    #print("\n\nNumber of modifications detected: {}".format(len(count_dic)))
     for x in count_dic:
         print(x, count_dic[x])
-    print("Lowest score: {} {}".format(min_val, min_mod))
+    #print("Lowest score: {} {}".format(min_val, min_mod))
     return results

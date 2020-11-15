@@ -4,19 +4,28 @@
 }
 
 </style>
-<table style="width: 100%; table-layout: fixed; word-wrap:break-word;">
-    <tr><th>reference</th><th>sample</th></th><th>cosine</th></tr>
+<table id=result_tbl style="width: 100%; table-layout: fixed; word-wrap:break-word;">
+    <thead>
+        <tr><th>reference</th><th>scan</th></th><th>rt</th><th>cosine</th><th>compare </th></tr>
+    </thead>
 
     {% for answer in results %}
 
 
-
-        <tr class="results-table-tr" >
+        <tr class="results-table-tr ion-table-tr" >
             <td>{{ answer.reference }}</td>
-            <td>{{ answer.sample }}</td>
+            <td data-sort="{{ answer.sample }}">{{ answer.sample }}</td>
+            <td data-sort="{{ answer.sample_rt_s }}">{{ answer.sample_rt_m }}</td>
             <td>{{ answer.cosine }}</td>
+
+            <!-- Send session_id, reference_id, sample_id, ab_cut -->
+            <td><a href="#" onclick="window.open('/comparison_popup_handler?reference_id={{ answer.reference_id }}&ab_cut={{ answer.ab_cut  | safe }}&sample_id={{ answer.sample_id | safe }}&session_id={{ session_id }}&cos_result={{ answer.cosine }}', '', 'width=1000,height=600');">view</a></td>
         </tr>
 
 
     {% endfor %}
 </table>
+<script>
+    new Tablesort(document.getElementById('result_tbl'));
+
+</script>

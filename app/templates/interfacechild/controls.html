@@ -1,0 +1,98 @@
+<!-- control display block. -->
+<!-- Note that this is rendered as a CHILD of the interface table -->
+
+<div class="interface-subplot" style="height: 100%;">
+    <!-- Control interface styles.-->
+    <style>
+            .slidecontainer {
+              width: 100%;
+            }
+
+            .slider {
+              -webkit-appearance: none;
+              width: 61%;
+              height: 25px;
+              background: #d3d3d3;
+              outline: none;
+              opacity: 0.7;
+              -webkit-transition: .2s;
+              transition: opacity .2s;
+              border-radius: 5px;
+
+            }
+
+            .slider:hover {
+              opacity: 1;
+            }
+
+            .slider::-webkit-slider-thumb {
+                border-radius: 5px;
+              -webkit-appearance: none;
+              appearance: none;
+              width: 30px;
+              height: 30px;
+              background: #7d6ca3;
+              cursor: pointer;
+            }
+
+            .slider::-moz-range-thumb {
+              width: 30px;
+              height: 30px;
+              border-radius: 5px;
+
+              background: #7d6ca3;
+              cursor: pointer;
+            }
+            </style>
+
+
+
+    <!-- Loading bar styles.-->
+    <style>
+        #progress {
+            width: 61%;
+            background-color: grey;
+        }
+        #bar {
+            width: 1%;
+            height: 30px;
+            background-color: aquamarine;
+        }
+    </style>
+
+    <!-- Loading bar-->
+    <span id="loading" style="visibility: visible;"><br><br>
+        <div id="progress" style="margin-top: auto; margin-bottom: auto; margin-left: auto; margin-right: auto;"><div id="bar"></div></div>
+    </span>
+
+    <span id="controls" style="visibility: hidden;">
+        <form id="spectral-match-form" method="post" enctype="multipart/form-data">
+        <h3>search controls</h3><hr>
+
+        <label for="relative_abundance_slider">relative abundance cutoff: <span id="input-ab"></span></label><br>
+        <input name="ab" class="slider" id=relative_abundance_slider type="range" min=0 max="0.9" value="0.07" step="0.01">
+        <script>
+            var abslide = document.getElementById("relative_abundance_slider");
+            var abval = document.getElementById("input-ab");
+            abval.innerHTML = abslide.value;
+            abslide.oninput = function() {abval.innerHTML = this.value;}
+        </script>
+
+        <br><br><label for="cosine_cutoff_slider">cosine cutoff: <span id="input-cos"></span></label><br>
+        <input name="cos" class=slider id=cosine_cutoff_slider type="range" min=0 max="1" value="0.61" step="0.01">
+        <script>
+            var cosslide = document.getElementById("cosine_cutoff_slider");
+            var cosval = document.getElementById("input-cos");
+            cosval.innerHTML = cosslide.value;
+            cosslide.oninput = function() {cosval.innerHTML = this.value;}
+        </script>
+
+
+        <h5>precursor m/z match <input name="mz" type="checkbox" checked></h5>
+        <input type="hidden" name="tkn" value="{{ token }}">
+        <button id="search" type="button">Search</button>
+    </form>
+    </span>
+
+
+</div>

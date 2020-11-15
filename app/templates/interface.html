@@ -1,4 +1,7 @@
 {%  extends 'base.html' %}
+
+
+
 {%  block content %}
 
 <style>
@@ -45,268 +48,128 @@
 </style>
 
 <div id=interface-container>
+    <table id="interface-table" >
 
-<table id="interface-table" >
     <tr class="interface-border">
         <td class="interface-border left-colbar">
-            <!-- Reference spectra box -->
-            <div class="interface-subplot-header">
-                <h3>reference ions (<span id="reference-ion-count">loading...</span>)</h3>
-            </div>
-            <div class="interface-subplot">
-                <div class="generic-scroll-section">
-                    <span id="reference-ion-list"></span>
-                </div>
-            </div>
+            {% include 'interfacechild/reference.html' %}
         </td>
         <td rowspan="3" class="interface-border right-colbar">
-            <div class="interface-subplot-header">
-                <h3>results</h3>
-            </div>
-            <span id="results-loading" style="visibility: hidden;">
-                <h3>Your request is processing. Be patient.</h3>
-            </span>
-            <div class="interface-subplot">
-                <span id="results"></span>
-            </div>
+            {% include 'interfacechild/results.html' %}
         </td>
-    </tr>
-
-    <tr class="interface-border">
-        <td class="interface-border left-colbar">
-            <div class="interface-subplot-header">
-                <h3>sample ions (<span id="sample-ion-count">loading...</span>)</h3>
-            </div>
-            <div class="interface-subplot">
-                <div class="generic-scroll-section">
-                    <span id="sample-ion-list"></span>
-                </div>
-
-            </div>
-            <!-- Sample spectra box -->
-        </td>
-
     </tr>
     <tr class="interface-border">
         <td class="interface-border left-colbar">
-            <div class="interface-subplot" style="height: 100%;">
-
-                <style>
-            .slidecontainer {
-              width: 100%;
-            }
-
-            .slider {
-              -webkit-appearance: none;
-              width: 61%;
-              height: 25px;
-              background: #d3d3d3;
-              outline: none;
-              opacity: 0.7;
-              -webkit-transition: .2s;
-              transition: opacity .2s;
-              border-radius: 5px;
-
-            }
-
-            .slider:hover {
-              opacity: 1;
-            }
-
-            .slider::-webkit-slider-thumb {
-                border-radius: 5px;
-              -webkit-appearance: none;
-              appearance: none;
-              width: 30px;
-              height: 30px;
-              background: #7d6ca3;
-              cursor: pointer;
-            }
-
-            .slider::-moz-range-thumb {
-              width: 30px;
-              height: 30px;
-              border-radius: 5px;
-
-              background: #7d6ca3;
-              cursor: pointer;
-            }
-            </style>
-                <style>
-                    #progress {
-                        width: 61%;
-                        background-color: grey;
-                    }
-                    #bar {
-                        width: 1%;
-                        height: 30px;
-                        background-color: aquamarine;
-                    }
-                </style>
-                <span id="loading" style="visibility: visible;">
-                    <br>
-                    <br>
-                    <div id="progress" style="margin-top: auto; margin-bottom: auto; margin-left: auto; margin-right: auto;">
-                        <div id="bar">
-
-                        </div>
-                    </div>
-                </span>
-                <span id="controls" style="visibility: hidden;">
-
-
-                <form id="spectral-match-form" method="post" enctype="multipart/form-data">
-                    <h3>search controls</h3><hr>
-
-                    <label for="relative_abundance_slider">relative abundance cutoff: <span id="input-ab"></span></label><br>
-                    <input name="ab" class="slider" id=relative_abundance_slider type="range" min=0 max="0.9" value="0.07" step="0.01">
-                    <script>
-                        var abslide = document.getElementById("relative_abundance_slider");
-                        var abval = document.getElementById("input-ab");
-                        abval.innerHTML = abslide.value;
-                        abslide.oninput = function() {abval.innerHTML = this.value;}
-                    </script>
-
-                    <br><br><label for="cosine_cutoff_slider">cosine cutoff: <span id="input-cos"></span></label><br>
-                    <input name="cos" class=slider id=cosine_cutoff_slider type="range" min=0 max="1" value="0.61" step="0.01">
-                    <script>
-                        var cosslide = document.getElementById("cosine_cutoff_slider");
-                        var cosval = document.getElementById("input-cos");
-                        cosval.innerHTML = cosslide.value;
-                        cosslide.oninput = function() {cosval.innerHTML = this.value;}
-                    </script>
-
-
-                    <h5>precursor m/z match <input name="mz" type="checkbox" checked></h5>
-                    <input type="hidden" name="tkn" value="{{ token }}">
-                    <button id="search" type="button">Search</button>
-                </form>
-                </span>
-
-
-
-            </div>
+            {% include 'interfacechild/sample.html' %}
         </td>
     </tr>
-
-
-
-
+    <tr class="interface-border">
+        <td class="interface-border left-colbar">
+            {% include 'interfacechild/controls.html' %}
+        </td>
+    </tr>
 </table>
-
+</div>
+<!-- Process handling of spectral matching requests. -->
 <script>
 // process handling of spectral matching requests.
+
+var refInterval = window.setInterval('tempupdate()', 1000);
+
+var tempupdate = function(){
+    $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: '/API/scan_progress',
+            data: {'data': '{{ token }}'},
+            success: function (data) {
+                $("#bar").css("width", data.update_pct + "%");
+
+
+
+            }
+
+        }
+
+
+
+    )
+}
+
 
 $(function() {
 $('#search').click(function() {
 
-    var form_data = new FormData($('#spectral-match-form')[0]);
-    $('#controls').css('visibility', 'hidden');
-    $('#results-loading').css('visibility', 'visible');
+var form_data = new FormData($('#spectral-match-form')[0]);
+$('#controls').css('visibility', 'hidden');
+$('#loading').css("visibility", 'visible');
+$('#loading').css('display', 'inherit')
 
-    $.ajax({
-        type: 'POST',
-        url: 'API/search',
-        data: form_data,
-        contentType: false,
-        cache: false,
-        processData: false,
-        dataType: "json",
-        success: function(data) {
-            $('#results-loading').css('visibility', 'hidden');
-
-            $('#results').html(data.html);
-
-            $('#controls').css('visibility', 'visible');
+$.ajax({
+    type: 'POST',
+    url: 'API/search',
+    data: form_data,
+    contentType: false,
+    cache: false,
+    processData: false,
+    dataType: "json",
 
 
-        },
-    });
+    success: function(data) {
+        $('#loading').css('visibility', 'hidden');
+        $('#loading').css('display', 'none');
+
+        $('#results').html(data.html);
+        $('#controls').css('visibility', 'visible');
+
+
+    },
+});
 });
 });
 </script>
 
+<!-- Fetch JSON of ions from server-side once DOM is loaded -->
 <script>
 
+$(document).ready(function(){
+    // Update listing of reference ions.
 
+    $.ajax({ url: "API/reference_ion_json?session_id={{ token }}&relative_ion_cutoff=0.07",
+            context: document.body,
+            dataType: 'json',
+            success: function(data) {
+                $('#reference-ion-count').text(Object.keys(data.ions).length);
+                $('#reference-ion-list').html(data.html);
 
-    $(document).ready(function(){
-        // Update listing of reference ions.
-
-        $.ajax({ url: "API/reference_ion_json?session_id={{ token }}&relative_ion_cutoff=0.07",
-                context: document.body,
-                dataType: 'json',
-                success: function(data) {
-                    $('#reference-ion-count').text(Object.keys(data.ions).length);
-                    $('#reference-ion-list').html(data.html);
-                    for (var i = 0; i < Object.keys(data.ions).length; i++){
-                        (function(index){
-
-
-
-                        $.ajax({
-                            url: '/API/mass_spectrum',
-                            type: 'post',
-                            dataType: 'json',
-                            contentType: 'application/json',
-                            success: function (data) {
-                                console.log("Loading image ", index);
-                                $("#reference_spectrum_img_"+index).html(data.img);
-                            }, data: JSON.stringify(data.ions[index])
-                        });
-                        })(i);
-                    }
-
-
-                }});
-
-        // Update listing of sample ions.
-        $.ajax({ url: "API/sample_ion_json?session_id={{ token }}&relative_ion_cutoff=0.07",
-                context: document.body,
-                dataType: 'json',
-                success: function(data){
-                $('#sample-ion-count').text(Object.keys(data.ions).length);
-                $('#sample-ion-list').html(data.html);
-                var l = Object.keys(data.ions).length;
-                for (var i = 0; i < Object.keys(data.ions).length; i++){
-                        (function(index, len){
-
-
-
-
-
-                        $.ajax({
-                            url: '/API/mass_spectrum',
-                            type: 'post',
-                            dataType: 'json',
-                            contentType: 'application/json',
-                            success: function (data) {
-                                $('#bar').css('width', ''+  100 * (index / len) + '%');
-                                $("#sample_spectrum_img_"+index).html(data.img);
-
-                                if(index > len - 10){  console.log("MAKING CONTROLS VISIBLE!!!!!!")
-        document.getElementById('loading').style.visibility =  'hidden';
-        document.getElementById('controls').style.visibility = 'visible';
-    }
-                            }, data: JSON.stringify(data.ions[index])
-                        });
-
-                        })(i, l);
-
-
-                    }
-
-
-
-                // Start listing ions in the scrollable table
 
             }});
-    });
+
+    // Update listing of sample ions.
+    $.ajax({ url: "API/sample_ion_json?session_id={{ token }}&relative_ion_cutoff=0.07",
+            context: document.body,
+            dataType: 'json',
+            success: function(data){
+            $('#sample-ion-count').text(Object.keys(data.ions).length);
+            $('#sample-ion-list').html(data.html);
+            var l = Object.keys(data.ions).length;
+            document.getElementById('loading').style.visibility =  'hidden';
+            document.getElementById('loading').style.display =  'none';
+
+            document.getElementById('controls').style.visibility = 'visible';
+
+
+
+                }
+
+
+
+            // Start listing ions in the scrollable table
+
+        });
+});
 
 
 </script>
-
-
-</div>
 
 {% endblock %}

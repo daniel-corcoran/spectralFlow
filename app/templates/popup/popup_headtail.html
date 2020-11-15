@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>{% include 'popup/head.html' %}</head>
+
+<body>
+<style>
+#interface-container {
+    height: 100%;
+}
+#interface-table {
+    width: 100%;
+    height: 100%;
+}
+.interface-border {
+    border: 5px solid #290d49;
+    border-radius: 10px;
+
+    border-collapse: collapse;
+}
+.left-colbar {
+    vertical-align: top;
+    background-color: aliceblue;
+    width: 50%;
+    height: 33%;
+
+}
+.right-colbar {
+    vertical-align: top;
+    background-color: #f7f9fd;
+
+    width: 50%;
+}
+.interface-subplot-header {
+    text-align: center;
+    height: 10%;
+}
+.interface-subplot {
+    width: 100%;
+    height: 80%;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    text-align: center;
+}
+
+
+</style>
+<div id="interface-container">
+
+    <table id=interface-table>
+        <tr class="interface-border">
+            <td class="interface-border left-colbar">
+                {% include 'popup/reference_template.html'%}
+            </td>
+            <td rowspan="3" class="interface-border right-colbar">
+                <!-- Row 1/1 on left column. This is where our spectrum lands.-->
+                {% include 'popup/spectrum.html' %}
+            </td>
+        </tr>
+        <tr class="interface-border">
+                <td class="interface-border left-colbar">
+                    {% include 'popup/sample_template.html' %}
+                </td>
+            </tr>
+            <tr class="interface-border">
+                <td class="interface-border left-colbar">
+                    {% include 'popup/analysis.html' %}
+                </td>
+            </tr>
+        </table>
+
+
+</div>
+</body>
+
+
+
+</html>
